@@ -1,0 +1,54 @@
+version: "3.7"
+services:
+  ### Gateway Container ###
+  gateway:
+    container_name: uberpopug_gateway
+    image: docker.pkg.github.com/maxvoronov/uberpopug/gateway:latest
+    build:
+      context: ..
+      dockerfile: ./deployment/images/caddy/Dockerfile
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - app
+    volumes:
+      - ../app/public:/var/www/public:ro
+    env_file:
+      - ../app/.env
+      - ../app/.env.local
+    networks:
+      - uberpopug-network
+
+  ### Application Container ###
+  app:
+    container_name: uberpopug_app
+    image: docker.pkg.github.com/maxvoronov/uberpopug/app:latest
+    build:
+      context: ..
+      dockerfile: ./deployment/images/php/Dockerfile
+    volumes:
+      - ../app:/var/www:cached
+    depends_on:
+      - database
+    env_file:
+      - ../app/.env
+      - ../app/.env.local
+    networks:
+      - uberpopug-network
+
+  ### Database Container ###
+  database:
+    container_name: uberpopug_database
+    image: postgres:13.1-alpine
+    ports:
+      - 5432:5432
+    env_file:
+      - ../app/.env
+      - ../app/.env.local
+    networks:
+      - uberpopug-network
+
+networks:
+  uberpopug-network:
+    name: uberpopug-network
